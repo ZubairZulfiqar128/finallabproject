@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import { CartProvider } from './context/CartContext'
+import { CartProvider, useCart } from './context/CartContext'
 import { ProductsProvider } from './context/ProductsContext'
 import Footer from './components/Footer'
 import Modal from './components/Modal'
@@ -27,16 +27,55 @@ function ScrollToTop() {
   return null
 }
 
+function QuickViewModal({ product, onClose }) {
+  const { addToCart, syncing } = useCart()
+  const [added, setAdded] = useState(false)
+
+  const formattedPrice = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format(product.price)
+
+  const handleAdd = async () => {
+    await addToCart(product.id, 1)
+    setAdded(true)
+  }
+
+  return (
+    <Modal isOpen onClose={onClose} title={product.name}>
+      <div className="quick-view">
+        <img src={product.image} alt="" className="quick-view-image" />
+        <p className="quick-view-brand">{product.brand}</p>
+        <p className="quick-view-price">{formattedPrice}</p>
+        <p className="quick-view-desc">{product.shortDescription}</p>
+        <div className="modal-actions">
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={handleAdd}
+            disabled={syncing}
+          >
+            {added ? 'Added ✓' : syncing ? 'Adding…' : 'Add to cart'}
+          </button>
+          <Link
+            to={`/products/${product.id}`}
+            className="btn btn--outline"
+            onClick={onClose}
+          >
+            Full details
+          </Link>
+          <button type="button" className="btn btn--ghost" onClick={onClose}>
+            Close
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 function AppRoutes() {
   const [quickViewProduct, setQuickViewProduct] = useState(null)
-
-  const formattedPrice = quickViewProduct
-    ? new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        maximumFractionDigits: 0,
-      }).format(quickViewProduct.price)
-    : ''
 
   return (
     <>
@@ -61,40 +100,12 @@ function AppRoutes() {
       </main>
       <Footer />
 
-      <Modal
-        isOpen={!!quickViewProduct}
-        onClose={() => setQuickViewProduct(null)}
-        title={quickViewProduct?.name}
-      >
-        {quickViewProduct ? (
-          <div className="quick-view">
-            <img
-              src={quickViewProduct.image}
-              alt=""
-              className="quick-view-image"
-            />
-            <p className="quick-view-brand">{quickViewProduct.brand}</p>
-            <p className="quick-view-price">{formattedPrice}</p>
-            <p className="quick-view-desc">{quickViewProduct.shortDescription}</p>
-            <div className="modal-actions">
-              <Link
-                to={`/products/${quickViewProduct.id}`}
-                className="btn btn--primary"
-                onClick={() => setQuickViewProduct(null)}
-              >
-                Full details
-              </Link>
-              <button
-                type="button"
-                className="btn btn--outline"
-                onClick={() => setQuickViewProduct(null)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        ) : null}
-      </Modal>
+      {quickViewProduct ? (
+        <QuickViewModal
+          product={quickViewProduct}
+          onClose={() => setQuickViewProduct(null)}
+        />
+      ) : null}
     </>
   )
 }

@@ -2,6 +2,7 @@
   "name": "maison-chronos",
   "private": true,
   "version": "1.0.0",
+  "type": "module",
   "description": "MERN luxury watch store — monorepo (backend + frontend)",
   "scripts": {
     "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend",

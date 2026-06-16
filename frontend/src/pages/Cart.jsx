@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import CartItem from '../components/CartItem'
 import ErrorMessage from '../components/ErrorMessage'
 import LoadingSpinner from '../components/LoadingSpinner'
+import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useProducts } from '../context/ProductsContext'
 
@@ -10,7 +11,8 @@ import { useProducts } from '../context/ProductsContext'
  * Shopping cart with line items resolved from the API product catalog.
  */
 export default function Cart() {
-  const { items, updateQuantity, removeFromCart } = useCart()
+  const { items, updateQuantity, removeFromCart, syncing, isServerCart } = useCart()
+  const { user } = useAuth()
   const { loading, error, reload, getProductById } = useProducts()
 
   const linesWithProducts = useMemo(
@@ -44,7 +46,22 @@ export default function Cart() {
     <div className="page-cart">
       <header className="page-header">
         <h1 className="page-title">Your cart</h1>
+        {!user ? (
+          <p className="page-intro">
+            Guest cart — items saved in your browser.{' '}
+            <Link to="/login" state={{ from: { pathname: '/cart' } }}>
+              Sign in
+            </Link>{' '}
+            to sync with MongoDB across devices.
+          </p>
+        ) : (
+          <p className="page-intro">
+            Welcome back, {user.name.split(' ')[0]}. Your cart is synced to your account.
+          </p>
+        )}
       </header>
+
+      {syncing ? <p className="cart-syncing" aria-live="polite">Updating cart…</p> : null}
 
       {items.length === 0 ? (
         <div className="cart-empty">
@@ -73,7 +90,9 @@ export default function Cart() {
               <span>{formattedTotal}</span>
             </div>
             <p className="cart-summary-note">
-              Taxes and duties calculated at checkout (demo—no real checkout).
+              {isServerCart
+                ? 'Cart stored in MongoDB — persists across sessions.'
+                : 'Sign in to save your cart to the database.'}
             </p>
             <button type="button" className="btn btn--primary btn--block" disabled>
               Proceed to checkout
