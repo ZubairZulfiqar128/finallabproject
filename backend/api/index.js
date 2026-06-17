@@ -1,7 +1,3 @@
-/**
- * Alternate Vercel entry (unused when vercel.json targets backend/src/app.js).
- * Kept for compatibility; re-exports the same Express app.
- */
-import app from '../src/app.js'
+import app from '../index.js'  // or wherever your app is
 
 export default app
